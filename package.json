@@ -1,0 +1,27 @@
+{
+  "name": "fog_of_war_server",
+  "version": "1.0.0",
+  "description": "Server for fog of war client",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config ./dist/index.js",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hampus Hallkvist & Isak Einberg",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.5.1",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.0.1",
+    "typescript": "^4.2.4",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/morgan": "^1.9.2",
+    "@types/uuid": "^8.3.0"
+  }
+}
