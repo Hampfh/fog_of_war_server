@@ -6,7 +6,6 @@ import {
 	getConnection, 
 	getConnectionCount, 
 	getRooms, 
-	getState, 
 	joinRoom, 
 	setConnection 
 } from "./state";
