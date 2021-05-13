@@ -40,9 +40,11 @@ export function getConnection(socket: string) {
 	return state.connections.get(socket)
 }
 
-export function deleteConnection(socketId: string) {
+export function deleteConnection(socketId: string): boolean {
 	const connection = state.connections.get(socketId)
 	const activeLobby = connection?.activeLobby
+
+	let lobbyDeleted = false;
 
 	// Remove connection from lobby if in one
 	if (activeLobby) {
@@ -55,10 +57,12 @@ export function deleteConnection(socketId: string) {
 		// then remove the room
 		else if (lobby) {
 			state.lobbies.delete(activeLobby)
+			lobbyDeleted = true
 		}
 	}
 
 	state.connections.delete(socketId)
+	return lobbyDeleted
 }
 
 export function createRoom(socketId: SocketId): string {
@@ -105,4 +109,14 @@ export function joinRoom(socketId: SocketId, roomCode: string): boolean {
 
 export function getRooms() {
 	return state.lobbies
+}
+
+export function listLobbiesFormatted() {
+	// When a room is created we send the room to all listeners
+	const rawRooms = getRooms()
+	let rooms: string = ""
+	for (const [id, room] of rawRooms.entries()) {
+		rooms += `${id}:${room.members.length};`
+	}
+	return rooms
 }

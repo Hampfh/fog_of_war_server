@@ -7,22 +7,20 @@ import {
 	getConnectionCount, 
 	getRooms, 
 	joinRoom, 
+	listLobbiesFormatted, 
 	setConnection 
 } from "./state";
 
 export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEventsMap>) {
 	setConnection(socket.id)
 
+	// Join the main lobby
+	socket.join("main_lobby")
+
 	console.log("New Connection! Total connections:", getConnectionCount())
 
-	socket.on("list_rooms", async (data) => {
-		const rawRooms = getRooms()
-		const rooms: { id: string, members: number }[] = []
-		for (const [id, room] of rawRooms.entries()) {
-			rooms.push({ id, members: room.members.length })
-		}
-		
-		socket.emit("list_rooms_res", JSON.stringify(rooms))
+	socket.on("list_rooms", async () => {
+		socket.emit("list_rooms", listLobbiesFormatted())
 	})
 
 	socket.on("join_room", async roomCode => {
@@ -31,6 +29,7 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 			try {
 				await socket.join(roomCode)
 				socket.emit("join_room_res", true)
+				socket.leave("main_lobby")
 			} catch {
 				socket.emit("join_room_res", false)
 				return
@@ -47,6 +46,9 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 			try {
 				await socket.join(roomCode)
 				socket.emit("create_room_res", roomCode)
+
+				socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
+				socket.leave("main_lobby")
 			} catch {
 				socket.emit("create_room_res", false)
 			}
@@ -68,7 +70,10 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 			socket.to(connection.activeLobby).emit("opponent_disconnect")
 		}
 		// Remove connection and leave room
-		deleteConnection(socket.id)
+		const lobbyDeleted = deleteConnection(socket.id)
+		if (lobbyDeleted) {
+			socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
+		}
 		console.log("Client left! Total connections:", getConnectionCount())
 	})
 
