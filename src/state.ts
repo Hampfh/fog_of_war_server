@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid"
+import Crypto from "crypto"
 
 type SocketId = string
 type LobbyCode = string
@@ -70,7 +70,7 @@ export function createRoom(socketId: SocketId): string {
 	if (!connection) 
 		return ""
 
-	const roomCode = uuid()
+	const roomCode = Crypto.randomBytes(2).toString("hex");
 
 	// Add room to connection
 	connection.activeLobby = roomCode
