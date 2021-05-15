@@ -56,6 +56,7 @@ export function deleteConnection(socketId: string): boolean {
 		// If the connection is last connection in the room
 		// then remove the room
 		else if (lobby) {
+			console.log("DELETE LOBBY #2")
 			state.lobbies.delete(activeLobby)
 			lobbyDeleted = true
 		}
@@ -116,7 +117,9 @@ export function listLobbiesFormatted() {
 	const rawRooms = getRooms()
 	let rooms: string = ""
 	for (const [id, room] of rawRooms.entries()) {
-		rooms += `${id}:${room.members.length};`
+		if (room.members.length < 2) {
+			rooms += `${id}:${room.members.length};`
+		}
 	}
 	return rooms
 }
