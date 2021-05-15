@@ -65,6 +65,60 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 		}
 	})
 
+	socket.on("resign", async () => {
+		const connection = getConnection(socket.id)
+		if (!connection || !connection.activeLobby) {
+			socket.emit("resign_res", false)
+			return
+		}
+
+		socket.to(connection.activeLobby).emit("resign", "")
+		socket.emit("resign_res", true)
+	})
+
+	socket.on("set_name", async (data: string) => {
+		const connection = getConnection(socket.id)
+		if (!connection || data.length < 1) {
+			socket.emit("set_name_res", false)
+			return
+		}
+
+		// Set name of user
+		connection.name = data
+	})
+
+	socket.on("send_name", async () => {
+
+		const connection = getConnection(socket.id)
+		if (!connection) {
+			socket.emit("get_opponent_name_res", false)
+			return
+		}
+
+		const result = getOpponent()
+		if (!result) {
+			socket.emit("get_opponent_name_res", false)
+			return
+		}
+
+		const { id } = result
+
+		socket.to(id).emit("get_opponent_name", connection.name ?? "")
+	})
+
+	socket.on("get_opponent_name", async () => {
+		
+		const result = getOpponent()
+		if (!result) {
+			socket.emit("get_opponent_name_res", false)
+			return
+		}
+
+		const { opponent } = result
+
+		socket.emit("get_opponent_name", opponent.name ?? "")
+	})
+
 	socket.on("play_again", async () => {
 		const connection = getConnection(socket.id)
 		if (!connection || !connection.activeLobby) {
@@ -146,4 +200,32 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 	socket.on("error", error => {
 		console.warn(error)
 	})
+
+	function getOpponent() {
+		const connection = getConnection(socket.id)
+		if (!connection || !connection.activeLobby) {
+			return
+		}
+
+		// Fetch room
+		const rooms = getRooms()
+		const room = rooms.get(connection.activeLobby)
+		if (!room) {
+			return
+		}
+
+		// Find the opponent
+		const opponentId = room.members.find(current => current != socket.id)
+		if (!opponentId) {
+			return
+		}
+
+		// Fetch opponent connction
+		const opponentConnection = getConnection(opponentId)
+		if (!opponentConnection) {
+			return
+		}
+
+		return { opponent: opponentConnection, id: opponentId }
+	}
 }
