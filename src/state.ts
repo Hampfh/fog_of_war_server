@@ -3,7 +3,7 @@ import Crypto from "crypto"
 type SocketId = string
 type LobbyCode = string
 
-interface IConnection {
+export interface IConnection {
 	name?: string
 	activeLobby?: LobbyCode
 }
@@ -42,28 +42,33 @@ export function getConnection(socket: string) {
 
 export function deleteConnection(socketId: string): boolean {
 	const connection = state.connections.get(socketId)
-	const activeLobby = connection?.activeLobby
+	if (!connection) {
+		return false
+	}
 
-	let lobbyDeleted = false;
+	const deletedLobby = leaveCurrentRoom(connection, socketId)
+	state.connections.delete(socketId)
+	return deletedLobby
+}
+
+export function leaveCurrentRoom(connection: IConnection, socketId: string): boolean {
 
 	// Remove connection from lobby if in one
-	if (activeLobby) {
-		const lobby = state.lobbies.get(activeLobby)
+	if (connection.activeLobby) {
+		const lobby = state.lobbies.get(connection.activeLobby)
 		if (lobby && lobby.members.length > 1) {
 			const memberIndex = lobby.members.findIndex(current => current === socketId)
 			lobby.members.splice(memberIndex, 1)
+			return false
 		}
 		// If the connection is last connection in the room
 		// then remove the room
 		else if (lobby) {
-			console.log("DELETE LOBBY #2")
-			state.lobbies.delete(activeLobby)
-			lobbyDeleted = true
+			state.lobbies.delete(connection.activeLobby)
+			return true
 		}
 	}
-
-	state.connections.delete(socketId)
-	return lobbyDeleted
+	return false
 }
 
 export function createRoom(socketId: SocketId): string {

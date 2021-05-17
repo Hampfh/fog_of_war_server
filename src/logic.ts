@@ -7,6 +7,7 @@ import {
 	getConnectionCount, 
 	getRooms, 
 	joinRoom, 
+	leaveCurrentRoom, 
 	listLobbiesFormatted, 
 	setConnection 
 } from "./state";
@@ -24,6 +25,21 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 	})
 
 	socket.on("join_room", async roomCode => {
+
+		const connection = getConnection(socket.id)
+		if (!connection) {
+			socket.emit("create_room_res", false)
+			return
+		}
+
+		// If the user is currently in a lobby
+		// we delete that lobby before creating
+		// another one
+		const lobbyDeleted = leaveCurrentRoom(connection, socket.id)
+		if (lobbyDeleted) {
+			socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
+		}
+
 		const success = joinRoom(socket.id, roomCode)
 		if (success) {
 			try {
@@ -49,6 +65,21 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 	})
 
 	socket.on("create_room", async () => {
+
+		const connection = getConnection(socket.id)
+		if (!connection) {
+			socket.emit("create_room_res", false)
+			return
+		}
+
+		// If the user is currently in a lobby
+		// we delete that lobby before creating
+		// another one
+		const lobbyDeleted = leaveCurrentRoom(connection, socket.id)
+		if (lobbyDeleted) {
+			socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
+		}
+
 		const roomCode = createRoom(socket.id)
 		if (roomCode.length <= 0)
 			socket.emit("create_room_res", false)
