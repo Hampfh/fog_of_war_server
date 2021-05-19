@@ -64,6 +64,16 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 		socket.to(connection.activeLobby).emit("set_opponent_color", color)
 	})
 
+	// This is sent by the current admin, telling the client
+	// what the clock should start at
+	socket.on("set_clock_time", async data => {
+		const connection = getConnection(socket.id)
+		if (!connection || !connection.activeLobby) {
+			return
+		}
+		socket.to(connection.activeLobby).emit("set_clock_time", data)
+	})
+
 	socket.on("create_room", async () => {
 
 		const connection = getConnection(socket.id)
@@ -218,13 +228,11 @@ export default function onConnect(socket: Socket<DefaultEventsMap, DefaultEvents
 	socket.on("disconnect", () => {
 		const connection = getConnection(socket.id)
 		if (connection && connection.activeLobby) {
-			socket.to(connection.activeLobby).emit("opponent_disconnect")
+			socket.to(connection.activeLobby).emit("opponent_disconnect", "")
 		}
 		// Remove connection and leave room
-		const lobbyDeleted = deleteConnection(socket.id)
-		if (lobbyDeleted) {
-			socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
-		}
+		deleteConnection(socket.id)
+		socket.to("main_lobby").emit("list_rooms", listLobbiesFormatted())
 		console.log("Client left! Total connections:", getConnectionCount())
 	})
 
